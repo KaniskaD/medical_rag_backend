@@ -64,7 +64,6 @@ protobuf==4.25.3
 pyasn1==0.6.1
 pycparser==2.23
 pydantic==2.7.4
-pydantic_core==2.41.5
 pyparsing==3.2.5
 pypdfium2==5.1.0
 pyreadline3==3.5.4
