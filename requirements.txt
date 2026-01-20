@@ -57,7 +57,6 @@ onnxruntime==1.16.3
 packaging==24.2
 pandas==2.1.4
 passlib==1.7.4
-pdfminer.six==20231228
 pdfplumber==0.11.8
 pillow==10.4.0
 preshed==3.0.12
