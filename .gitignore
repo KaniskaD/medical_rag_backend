@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Runtime storage
+tmp_audio/
+storage/
+
+# FAISS indexes (rebuildable)
+faiss_indexes/
+
+# Environment
+.env
