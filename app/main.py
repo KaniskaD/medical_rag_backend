@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
+import os
 
 from .database import Base, engine, SessionLocal
 from .models import User
@@ -16,13 +17,16 @@ from .routers import (
     analytics,
 )
 
+# -------------------------------
+# Database migration
+# -------------------------------
 def migrate_db():
     """
     Adds content_hash column to reports table if it doesn't exist.
     Safe to run multiple times.
     """
     try:
-        conn = sqlite3.connect("medical_rag.db")
+        conn = sqlite3.connect(os.getenv("DB_PATH", "medical_rag.db"))
         cursor = conn.cursor()
 
         cursor.execute("PRAGMA table_info(reports)")
@@ -42,6 +46,10 @@ def migrate_db():
         except Exception:
             pass
 
+
+# -------------------------------
+# Initial admin creation
+# -------------------------------
 def create_initial_admin():
     """
     Default credentials:
@@ -66,19 +74,21 @@ def create_initial_admin():
     finally:
         db.close()
 
-migrate_db()
 
-Base.metadata.create_all(bind=engine)
-
-create_initial_admin()
-
+# -------------------------------
+# FastAPI app
+# -------------------------------
 app = FastAPI(
     title="Medical RAG Backend",
     version="0.2.0",
 )
 
+# -------------------------------
+# CORS (safe for dev + prod)
+# -------------------------------
 origins = [
     "http://localhost:3000",
+    "https://*.vercel.app",
 ]
 
 app.add_middleware(
@@ -89,6 +99,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -------------------------------
+# Routers
+# -------------------------------
 app.include_router(auth.router)
 app.include_router(patients.router)
 app.include_router(reports.router)
@@ -98,6 +111,24 @@ app.include_router(users.router)
 app.include_router(admin.router)
 app.include_router(analytics.router)
 
+# -------------------------------
+# Startup tasks (RENDER SAFE)
+# -------------------------------
+@app.on_event("startup")
+def on_startup():
+    # Ensure upload directory exists
+    upload_dir = os.getenv("UPLOAD_DIR", "tmp_audio")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Database setup
+    migrate_db()
+    Base.metadata.create_all(bind=engine)
+    create_initial_admin()
+
+
+# -------------------------------
+# Health check
+# -------------------------------
 @app.get("/")
 def root():
     return {"message": "Medical RAG backend is running"}
